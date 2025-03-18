@@ -1,0 +1,49 @@
+//Server
+#include <iostream>
+#include <fstream>
+#include <cstring>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+
+int main() {
+    int s = socket(AF_INET, SOCK_STREAM, 0), c;
+    sockaddr_in addr = {AF_INET, htons(8080), INADDR_ANY};
+    bind(s, (sockaddr*)&addr, sizeof(addr)), listen(s, 3);
+
+    while ((c = accept(s, nullptr, nullptr))) {
+        char f[256] = {0}, d[1024] = {0};
+        read(c, f, sizeof(f));
+
+        std::ifstream file(f);
+        if (file.is_open()) {
+            file.read(d, sizeof(d));  // Read file content
+        } else {
+            strcpy(d, "File not found\n");  // Send error message
+        }
+
+        send(c, d, strlen(d), 0), close(c);
+    }
+}
+
+
+
+
+//client
+#include <iostream>
+#include <cstring>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
+int main() {
+    int s = socket(AF_INET, SOCK_STREAM, 0);
+    sockaddr_in addr = {AF_INET, htons(8080)};
+    inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
+    connect(s, (sockaddr*)&addr, sizeof(addr));
+
+    char f[256], d[1024] = {0};
+    std::cout << "Enter filename: ", std::cin >> f;
+    send(s, f, strlen(f), 0), read(s, d, sizeof(d)), std::cout << d;
+}
+
